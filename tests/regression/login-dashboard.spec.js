@@ -5,7 +5,7 @@ const { VALID, INVALID, EDGE } = require('../fixtures/loginData');
 const { EXPECTED }       = require('../fixtures/dashboardData');
 
 // ============================================================
-// Login Tests — 12 tests (3 happy · 4 negative · 1 ui · 2 edge · 2 test.fail)
+// Login Tests — 12 tests (3 happy · 4 negative · 1 ui · 3 edge · 1 test.fail)
 // ============================================================
 
 test.describe('[Login] Regression', () => {
@@ -101,6 +101,69 @@ test.describe('[Login] Regression', () => {
     await expect(loginPage.submitBtn).toBeVisible();
     await expect(loginPage.emailLabel).toBeVisible();
     await expect(loginPage.passLabel).toBeVisible();
+  });
+
+  // ── EDGE (bình thường) ─────────────────────────────────────────────────────
+
+  // EC-1.3: Email gần đến giới hạn RFC 5321 (252 ký tự) — server không được crash
+  test('[EDGE] EC-1.3 — Email dài 252 ký tự không crash server', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.fillEmail(EDGE.longEmail);
+    await loginPage.fillPassword(INVALID.somePassword);
+    await loginPage.submit();
+    await page.waitForTimeout(2000);
+    await expect(page).not.toHaveURL(/500|error/i);
+    const pageContent = await page.content();
+    expect(pageContent).not.toMatch(/Internal Server Error/i);
+  });
+
+  // EC-1.4: SQL Injection — app phải dùng prepared statements, không được lộ lỗi DB
+  test('[EDGE] EC-1.4 — SQL Injection bị chặn, không lộ lỗi DB', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.fillEmail(EDGE.sqlInjection);
+    await loginPage.fillPassword(EDGE.sqlInjection);
+    await loginPage.submitForce();
+    await page.waitForTimeout(2000);
+    expect(page.url()).toMatch(/sign-in|promer\.ai\/?$/i);
+    const pageContent = await page.content();
+    expect(pageContent).not.toMatch(EDGE.sqlErrorKeywords);
+  });
+
+  // ── EDGE (test.fail — known bugs) ─────────────────────────────────────────
+  // Giải thích test.fail():
+  //   - test.fail() = test DỰ KIẾN sẽ fail (vì bug chưa fix)
+  //   - Khi chạy: nếu test fail → Playwright đánh dấu "passed" (expected)
+  //   - Khi bug được fix: test sẽ pass → Playwright báo "unexpected pass"
+  //     → Đổi BUG status sang Fixed và xóa test.fail() khỏi suite
+
+  // EC-1.1: BUG-02 — App không trim space đầu/cuối trong email
+  //   Hành vi mong muốn: login thành công (app tự trim)
+  //   Hành vi thực tế: login fail (bug)
+  test.fail('[EDGE] EC-1.1 — BUG-02: Email có khoảng trắng → app không trim', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.fillEmail(EDGE.emailWithSpaces);
+    await loginPage.fillPassword(VALID.password);
+    await loginPage.submit();
+    await expect(page).not.toHaveURL(/\/sign-in/, { timeout: 10000 });
+  });
+
+  // EC-1.6: App trả cùng thông báo lỗi cho email sai và password sai
+  //   Đây là hành vi ĐÚNG (bảo mật) — không để lộ tài khoản tồn tại
+  //   BUG-03 đã xác nhận KHÔNG tồn tại: app.promer.ai đã implement đúng
+  //   → test này xác nhận security behavior luôn được giữ nguyên
+  test('[EDGE] EC-1.6 — Thông báo lỗi giống nhau → không lộ user enumeration', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.fillEmail(INVALID.nonExistentEmail);
+    await loginPage.fillPassword(INVALID.anyPassword);
+    await loginPage.submit();
+    const errorMsg1 = await loginPage.getErrorText();
+    await loginPage.goto();
+    await loginPage.waitForReady();
+    await loginPage.fillEmail(VALID.email);
+    await loginPage.fillPassword(INVALID.wrongPassword);
+    await loginPage.submit();
+    const errorMsg2 = await loginPage.getErrorText();
+    expect(errorMsg1).toBe(errorMsg2);
   });
 });
 
