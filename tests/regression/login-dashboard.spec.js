@@ -173,4 +173,71 @@ test.describe('[Login] Regression', () => {
 
 test.describe('[Dashboard] Regression', () => {
   // Tests được thêm ở Task 6
+
+  // ── HAPPY ──────────────────────────────────────────────────────────────────
+
+  // AC-2.1: Sau khi đăng nhập, tự động redirect về Dashboard — link "Home" phải visible
+  test('[HAPPY] AC-2.1 — Dashboard load sau khi đăng nhập', async ({ page }) => {
+    const loginPage  = new LoginPage(page);
+    const dashboard  = new DashboardPage(page);
+    await loginPage.goto();
+    await loginPage.waitForReady();
+    await loginPage.login(VALID.email, VALID.password);
+    await expect(page).not.toHaveURL(/\/sign-in/, { timeout: 15000 });
+    await expect(dashboard.homeLink).toBeVisible({ timeout: 10000 });
+  });
+
+  // AC-2.3: Content area có nội dung thực (không phải placeholder "—")
+  test('[HAPPY] AC-2.3 — Các widget hiển thị, không phải placeholder', async ({ page }) => {
+    const dashboard = new DashboardPage(page);
+    await dashboard.loginAndGoto(VALID.email, VALID.password);
+    await page.waitForTimeout(2000);
+    const contentText = (await dashboard.contentArea.textContent() || '').trim();
+    expect(contentText.length).toBeGreaterThan(10);
+    expect(contentText.trim()).not.toBe(EXPECTED.widgetPlaceholder);
+  });
+
+  // ── NEGATIVE (test.fail — known bugs) ─────────────────────────────────────
+
+  // EC-2.2: BUG-04 — Truy cập "/" không có session → app không redirect về /sign-in
+  //   Hành vi mong muốn: redirect về /sign-in
+  //   Hành vi thực tế: ở lại "/" với nút "Sign in" (không redirect)
+  test.fail('[NEGATIVE] EC-2.2 — BUG-04: Chưa đăng nhập → không redirect /sign-in', async ({ page }) => {
+    await page.context().clearCookies();
+    await page.goto('/');
+    await page.waitForTimeout(2000);
+    await expect(page).toHaveURL(/\/sign-in/, { timeout: 5000 });
+  });
+
+  // EC-2.4: BUG-05 — Khi API data trả về 500, app shell (sidebar + nav) bị vỡ
+  //   Hành vi mong muốn: sidebar và header vẫn hiển thị
+  //   Hành vi thực tế: link "Home" và "User menu" biến mất → màn hình trắng
+  test.fail('[NEGATIVE] EC-2.4 — BUG-05: API 500 → app shell vỡ', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    const dashboard = new DashboardPage(page);
+    await loginPage.goto();
+    await loginPage.waitForReady();
+    await loginPage.login(VALID.email, VALID.password);
+    await page.waitForURL(url => !url.toString().includes('/sign-in'), { timeout: 15000 });
+    // Mock: tất cả API (trừ auth) trả về 500
+    await page.route('**/api/**', async route => {
+      const url = route.request().url();
+      if (!url.includes('/auth') && !url.includes('/login') && !url.includes('/sign')) {
+        await route.fulfill({
+          status:      500,
+          contentType: 'application/json',
+          body:        JSON.stringify({ error: 'Internal Server Error' }),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+    await page.reload();
+    await page.waitForTimeout(3000);
+    // Khi bug fix: ít nhất 1 trong 2 phải visible
+    const hasShell =
+      await dashboard.homeLink.isVisible().catch(() => false) ||
+      await dashboard.userMenuBtn.isVisible().catch(() => false);
+    expect(hasShell).toBe(true);
+  });
 });
