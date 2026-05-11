@@ -1,0 +1,7 @@
+# Bảo vệ thông tin nhạy cảm — không đưa lên Git
+.env
+
+# Thư mục sinh ra khi chạy test — không cần lưu vào Git
+node_modules/
+playwright-report/
+test-results/

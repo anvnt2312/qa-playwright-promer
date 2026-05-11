@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx playwright *)",
+      "Bash(npx node -e ' *)",
+      "Bash(cp /tmp/find_login.js /Users/firegroup/my-qa-project/my-qa-project/my-playright-project/find_login.js)",
+      "Bash(node find_login.js)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:9323)",
+      "Bash(tee /tmp/dashboard-results.txt)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(cp /tmp/debug-form.spec.js /Users/firegroup/my-qa-project/my-qa-project/my-playright-project/tests/specs/debug-form.spec.js && npx playwright test tests/specs/debug-form.spec.js --project=chromium --reporter=list 2>&1)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ],
+    "additionalDirectories": [
+      "/private/tmp"
+    ]
+  }
+}
