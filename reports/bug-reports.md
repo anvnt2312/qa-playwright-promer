@@ -12,7 +12,7 @@
 |---|---|---|---|---|
 | BUG-01  | Trang login load chậm hơn 3 giây                     | Medium   | P2       | Open   |
 | BUG-02  | Email có khoảng trắng đầu/cuối không được trim → login thất bại | Medium | P2 | Open |
-| BUG-03  | Thông báo lỗi khác nhau giữa email sai và password sai — lộ user enumeration | **High** | **P1** | Open |
+| BUG-03  | Thông báo lỗi khác nhau giữa email sai và password sai — lộ user enumeration | **High** | **P1** | **Fixed** |
 | BUG-04  | App không redirect về /sign-in sau logout / khi chưa đăng nhập | Medium | P2 | Open |
 | BUG-05  | App shell vỡ hoàn toàn khi API trả về 500 — màn hình trắng/broken | **High** | **P1** | Open |
 
@@ -186,6 +186,10 @@ test-results/specs-login--Login-Đăng-nh-d16c1-ng-đầu-cuối-app-nên-tự-t
 | Môi trường   | https://app.promer.ai/sign-in  |
 | Browser      | Chrome (Chromium)              |
 | Ngày tìm     | 2026-05-07                     |
+| **Ngày fix** | **2026-05-11**                 |
+| **Status**   | **Fixed** ✅                   |
+
+> **Ghi chú fix (2026-05-11):** Regression test EC-1.6 chạy với `test.fail()` → báo "unexpected pass" → xác nhận app đã trả về cùng thông báo lỗi cho cả hai trường hợp. BUG-03 đã được fix (không rõ thời điểm fix). Test EC-1.6 đã chuyển sang normal test để monitor security behavior lâu dài.
 
 ### Mô tả lỗi / Bug Description
 
