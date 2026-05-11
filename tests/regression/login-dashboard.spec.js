@@ -45,6 +45,63 @@ test.describe('[Login] Regression', () => {
     await loginPage.pressEnterOnPassword();
     await expect(page).not.toHaveURL(/\/sign-in/, { timeout: 10000 });
   });
+
+  // ── NEGATIVE ───────────────────────────────────────────────────────────────
+
+  // AC-1.3a: Đúng email nhưng sai password → phải hiện lỗi, ở lại /sign-in
+  test('[NEGATIVE] AC-1.3 — Password sai → hiện lỗi', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.fillEmail(VALID.email);
+    await loginPage.fillPassword(INVALID.wrongPassword);
+    await loginPage.submit();
+    await expect(page).toHaveURL(/\/sign-in/, { timeout: 5000 });
+    await expect(page.locator('.Polaris-Text--critical, [role="alert"]').first())
+      .toBeVisible({ timeout: 5000 });
+  });
+
+  // AC-1.3b: Email chưa đăng ký → phải hiện lỗi, ở lại /sign-in
+  test('[NEGATIVE] AC-1.3 — Email không tồn tại → hiện lỗi', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.fillEmail(INVALID.nonExistentEmail);
+    await loginPage.fillPassword(INVALID.anyPassword);
+    await loginPage.submit();
+    await expect(page).toHaveURL(/\/sign-in/, { timeout: 5000 });
+    await expect(page.locator('.Polaris-Text--critical, [role="alert"]').first())
+      .toBeVisible({ timeout: 5000 });
+  });
+
+  // AC-1.4: Form hoàn toàn trống — Polaris dùng aria-disabled="true" thay vì HTML disabled
+  test('[NEGATIVE] AC-1.4 — Form trống → button bị disable', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    const isDisabled = await loginPage.isButtonDisabled();
+    expect(isDisabled).toBe(true);
+  });
+
+  // AC-1.5: Email thiếu "@" — Polaris hiện inline error "Enter a valid email"
+  //   submitForce() vì button có thể aria-disabled khi email sai format
+  test('[NEGATIVE] AC-1.5 — Email sai định dạng → inline error', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.fillEmail(INVALID.badFormatEmail);
+    await loginPage.fillPassword(INVALID.somePassword);
+    await loginPage.submitForce();
+    await page.waitForTimeout(500);
+    const isDisabled    = await loginPage.isButtonDisabled();
+    const inlineError   = await page.locator('text=Enter a valid email').isVisible().catch(() => false);
+    const criticalError = await page.locator('.Polaris-Text--critical').isVisible().catch(() => false);
+    expect(isDisabled || inlineError || criticalError).toBe(true);
+  });
+
+  // ── UI ─────────────────────────────────────────────────────────────────────
+
+  // AC-1.7: 3 element tương tác + 2 label accessibility phải visible cùng lúc
+  test('[UI] AC-1.7 — Trang login hiển thị đủ 3 element + 2 label', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await expect(loginPage.emailInput).toBeVisible();
+    await expect(loginPage.passInput).toBeVisible();
+    await expect(loginPage.submitBtn).toBeVisible();
+    await expect(loginPage.emailLabel).toBeVisible();
+    await expect(loginPage.passLabel).toBeVisible();
+  });
 });
 
 // ============================================================
