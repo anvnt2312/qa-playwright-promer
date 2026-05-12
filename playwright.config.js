@@ -4,6 +4,7 @@ const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: './tests',
+  testIgnore: ['**/regression/**'], // regression chạy riêng qua playwright.regression.js
   timeout: 30000,         // mỗi test tối đa 30 giây
   retries: 1,             // tự retry 1 lần nếu fail (tránh flaky)
   reporter: [

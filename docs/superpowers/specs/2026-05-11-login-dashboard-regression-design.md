@@ -49,7 +49,7 @@ Reuse hoàn toàn từ infrastructure hiện có:
 | 9 | SQL Injection bị chặn | EDGE EC-1.4 | Bình thường |
 | 10 | Hiển thị đủ 3 element + 2 label | UI AC-1.7 | Bình thường |
 | 11 | Email có khoảng trắng → login fail | EDGE EC-1.1 | `test.fail()` — BUG-02 |
-| 12 | Thông báo lỗi giống nhau (user enum) | EDGE EC-1.6 | `test.fail()` — BUG-03 |
+| 12 | Thông báo lỗi giống nhau (user enum) | EDGE EC-1.6 | Bình thường — BUG-03 Fixed (2026-05-11) |
 
 ### Dashboard (4 tests)
 
@@ -60,7 +60,9 @@ Reuse hoàn toàn từ infrastructure hiện có:
 | 15 | Chưa login → redirect về /sign-in | NEGATIVE EC-2.2 | `test.fail()` — BUG-04 |
 | 16 | API 500 → không crash app shell | NEGATIVE EC-2.4 | `test.fail()` — BUG-05 |
 
-**Tổng: 16 tests — 12 bình thường + 4 `test.fail()` (known bugs)**
+**Tổng: 16 tests — 13 bình thường + 3 `test.fail()` (known bugs)**
+
+> **Cập nhật 2026-05-11:** BUG-03 (EC-1.6) đã được fix — test.fail() báo "unexpected pass" khi chạy thực tế → chuyển EC-1.6 thành normal test. Regression suite hiện có 3 test.fail() thay vì 4.
 
 ### Loại bỏ khỏi regression (lý do)
 
@@ -123,7 +125,7 @@ npx playwright show-report reports/regression
 | Bug | Test | Severity |
 |---|---|---|
 | BUG-02 | EC-1.1 Email có khoảng trắng | Medium P2 |
-| BUG-03 | EC-1.6 User enumeration | High P1 |
+| ~~BUG-03~~ | ~~EC-1.6 User enumeration~~ | ~~High P1~~ → **Fixed 2026-05-11** |
 | BUG-04 | EC-2.2 Không redirect sau logout | Medium P2 |
 | BUG-05 | EC-2.4 App vỡ khi API 500 | High P1 |
 

@@ -567,8 +567,8 @@ test-results/specs-dashboard--Dashboard-444c0-fully-không-màn-hình-trắng--m
 |---|---|---|---|---|
 | BUG-01  | Medium   | P2       | Login/Perf  | Fix trong sprint tiếp — tối ưu performance               |
 | BUG-02  | Medium   | P2       | Login/UX    | Fix sớm — ảnh hưởng UX người dùng thông thường           |
-| BUG-03  | **High** | **P1**   | Login/Sec   | **Fix ngay** — lỗ hổng bảo mật cần vá trước release      |
+| BUG-03  | **High** | **P1**   | Login/Sec   | ✅ **Fixed** (2026-05-11) — app đã trả về cùng thông báo lỗi |
 | BUG-04  | Medium   | P2       | Dashboard   | Fix sớm — UX confusing sau logout, thiếu auth guard       |
 | BUG-05  | **High** | **P1**   | Dashboard   | **Fix ngay** — app crash khi server lỗi, cần Error Boundary |
 
-**Đề xuất:** ❌ NO-GO cho production cho đến khi BUG-03 và BUG-05 được fix.
+**Đề xuất:** ❌ NO-GO cho production cho đến khi BUG-05 được fix. *(BUG-03 đã được fix 2026-05-11)*
