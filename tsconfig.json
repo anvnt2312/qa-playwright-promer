@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    // Biên dịch ra ES2020 — đủ mới cho Node 18+, không cần polyfill
+    "target": "ES2020",
+
+    // CommonJS: khớp với "type": "commonjs" trong package.json
+    "module": "commonjs",
+
+    // Thư viện chuẩn: ES2020 + Node.js built-ins
+    "lib": ["ES2020"],
+
+    // Bật toàn bộ strict mode: bắt lỗi chặt hơn, code an toàn hơn
+    "strict": true,
+
+    // Cho phép import { x } từ module CommonJS (dotenv, path...)
+    "esModuleInterop": true,
+
+    // Tìm module theo chuẩn Node.js (tìm trong node_modules)
+    "moduleResolution": "node",
+
+    // Bỏ qua lỗi type trong node_modules (không cần thiết phải sạch)
+    "skipLibCheck": true,
+
+    // Giữ nguyên cách viết hoa tên file — quan trọng trên Linux/macOS
+    "forceConsistentCasingInFileNames": true
+  },
+
+  // Chỉ compile file config và test TypeScript (nếu có sau này)
+  "include": [
+    "playwright.config.ts",
+    "playwright.regression.ts",
+    "tests/**/*.ts"
+  ],
+
+  "exclude": ["node_modules", "dist"]
+}

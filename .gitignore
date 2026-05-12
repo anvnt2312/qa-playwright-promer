@@ -1,5 +1,9 @@
 # Bảo vệ thông tin nhạy cảm — không đưa lên Git
+# File .example là template an toàn → được phép commit
 .env
+.env.local
+.env.staging
+.env.production
 .claude/
 
 # Thư mục sinh ra khi chạy test — không cần lưu vào Git
