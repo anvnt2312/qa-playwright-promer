@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
-    "test:login": "playwright test tests/login.spec.js",
-    "test:report": "playwright show-report"
+    "test:regression": "playwright test --config=playwright.regression.js",
+    "test:report": "playwright show-report",
+    "test:report:regression": "playwright show-report reports/regression"
   },
   "keywords": [],
   "author": "",

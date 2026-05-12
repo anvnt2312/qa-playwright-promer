@@ -1,0 +1,122 @@
+# ============================================================
+# GitHub Actions: Tự động chạy Regression Test
+# Trigger: mỗi khi push lên main, hoặc mở Pull Request vào main
+# ============================================================
+
+name: Regression Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+  # Cho phép chạy thủ công từ tab "Actions" trên GitHub
+  workflow_dispatch:
+
+jobs:
+  regression:
+    name: Run Regression Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15   # tắt job nếu chạy quá 15 phút (tránh tốn tiền)
+
+    steps:
+      # ── Bước 1: Lấy code về máy CI ──────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── Bước 2: Cài Node.js (cache để lần sau nhanh hơn) ────
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ── Bước 3: Cài npm packages ─────────────────────────────
+      # npm ci: nhanh hơn npm install, dùng đúng version từ package-lock.json
+      - name: Install dependencies
+        run: npm ci
+
+      # ── Bước 4: Cài trình duyệt Chromium cho Playwright ─────
+      # --with-deps: cài cả system libraries cần thiết trên Linux
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      # ── Bước 5: Chạy regression tests ────────────────────────
+      # Credentials lấy từ GitHub Secrets (không lộ trong log)
+      # continue-on-error: true → tiếp tục upload report dù test fail
+      - name: Run regression tests
+        id: run-tests
+        env:
+          TEST_EMAIL:    ${{ secrets.TEST_EMAIL }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+          CI: 'true'
+        run: npm run test:regression
+        continue-on-error: true
+
+      # ── Bước 6: Tạo bảng tóm tắt kết quả ────────────────────
+      # Đọc file test-results.json (do playwright.regression.js tạo ra khi CI=true)
+      # Ghi vào GITHUB_STEP_SUMMARY → hiện ngay dưới phần job trên GitHub
+      - name: Generate job summary
+        if: always()
+        run: |
+          node -e "
+          const fs = require('fs');
+          let md = '';
+
+          try {
+            const data  = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
+            const s     = data.stats;
+            const ok    = s.unexpected === 0;
+            const icon  = ok ? '✅' : '❌';
+            const title = ok ? 'Không có regression mới' : 'Phát hiện regression mới!';
+
+            md = [
+              '## ' + icon + ' Regression Test — ' + title,
+              '',
+              '| Kết quả | Số test |',
+              '|---------|---------|',
+              '| ✅ Passed (kể cả known bugs chạy đúng) | ' + s.expected  + ' |',
+              '| ❌ Failed — regression mới!            | ' + s.unexpected + ' |',
+              '| ⏭️ Skipped                              | ' + s.skipped   + ' |',
+              '',
+              '**Branch:** \`${{ github.ref_name }}\`  ',
+              '**Commit:** \`${{ github.sha }}\`  ',
+              '**Triggered by:** @${{ github.actor }}',
+              '',
+              ok
+                ? '> Mọi test chạy đúng kỳ vọng. Nếu thấy \"unexpected pass\" → có bug vừa được fix!'
+                : '> ⚠️ Có test thất bại ngoài dự kiến. Xem HTML report trong Artifacts để debug.',
+            ].join('\n');
+
+          } catch (e) {
+            md = [
+              '## ⚠️ Không đọc được kết quả',
+              '',
+              'Playwright có thể đã crash trước khi sinh file JSON.',
+              'Kiểm tra log của bước **Run regression tests** phía trên.',
+            ].join('\n');
+          }
+
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md + '\n');
+          "
+
+      # ── Bước 7: Upload HTML report lên Artifacts ─────────────
+      # if: always() → upload kể cả khi test fail
+      # retention-days: 30 → GitHub giữ file trong 30 ngày
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-report-run-${{ github.run_number }}
+          path: reports/regression/
+          retention-days: 30
+
+      # ── Bước 8: Đánh dấu job FAIL nếu có regression mới ─────
+      # (cần thiết vì bước 5 dùng continue-on-error: true)
+      - name: Fail job if regression found
+        if: steps.run-tests.outcome == 'failure'
+        run: |
+          echo "❌ Có test thất bại ngoài dự kiến. Xem Summary và Artifacts để biết chi tiết."
+          exit 1
