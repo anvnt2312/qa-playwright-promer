@@ -1,5 +1,6 @@
 # Bảo vệ thông tin nhạy cảm — không đưa lên Git
 .env
+.claude/
 
 # Thư mục sinh ra khi chạy test — không cần lưu vào Git
 node_modules/
